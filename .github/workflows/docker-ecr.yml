@@ -6,8 +6,8 @@ on:
       - main  # Trigger on push to the main branch
 
 jobs:
-  # Job 1: Build and Push Docker Image to Docker Hub
-  build_and_push_dockerhub:
+  # Job 1: Build and Tag Docker Image for ECR
+  build_and_tag_ecr:
     runs-on: ubuntu-latest
     
     steps:
@@ -15,22 +15,20 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build Docker Image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest .
+        run: docker build -t my-python-app:latest .
+
+      - name: Tag Docker Image for ECR
+        run: |
+          # Tagging the image with ECR repository URL
+          docker tag my-python-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
       - name: Display images
         run: docker images
 
-      - name: Login to Docker Hub
-        run: echo ${{ secrets.DOCKER_PASSWORD }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-
-      - name: Push Docker Image to Docker Hub
-        run: docker push ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
-
-
-  # Job 2: Scan Docker Image with Trivy (pulls from Docker Hub)
+  # Job 2: Scan Docker Image with Trivy (using the tagged image from previous job)
   trivy_scan:
     runs-on: ubuntu-latest
-    needs: build_and_push_dockerhub  # Ensure this job runs after the build job
+    needs: build_and_tag_ecr  # Ensure this job runs after the build and tag job
 
     steps:
       - name: Checkout code
@@ -42,18 +40,15 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+    #   - name: Login to Docker Hub
+    #     run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Pull Docker Image from Docker Hub
-        run: docker pull ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
-
-      # Scan the image pulled from Docker Hub
+      # Scan the Docker image that was already tagged for ECR
       - name: Scan Docker Image with Trivy
         run: |
-          trivy image ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
+          trivy image ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
-  # Job 3: Push Docker Image to Amazon ECR (if scan is safe)
+  # Job 3: Push Docker Image to Amazon ECR (if the scan is safe)
   push_ecr:
     runs-on: ubuntu-latest
     needs: trivy_scan  # Ensure this job runs after the scan job
@@ -72,14 +67,8 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-# Push Docker Image to Amazon ECR
-      - name: Tag Docker Image for ECR
-        run: |
-         # Tagging the image with ECR repository URL
-          docker tag my-python-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
+      # Push the image to ECR
       - name: Push Docker Image to ECR
         run: |
-          # Pushing the tagged image to ECR
           docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
-
