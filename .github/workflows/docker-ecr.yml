@@ -20,7 +20,7 @@ jobs:
       - name: Tag Docker Image for ECR
         run: |
           # Tagging the image with ECR repository URL
-          docker tag my-python-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+          docker tag my-python-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
 
       - name: Display images
         run: docker images
