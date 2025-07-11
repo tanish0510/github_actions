@@ -1,4 +1,4 @@
-name: Build, Scan, and Push Docker Image
+name: Docker Build, Trivy Scan, and ECR Push
 
 on:
   push:
@@ -6,83 +6,78 @@ on:
       - main
 
 jobs:
-  # Job 1: Build Docker Image and Push to DockerHub
-  build_and_push_dockerhub:
+  # Job 1: Build Docker image
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Log in to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker Image
-        run: docker build -t my-python-app:latest .
-
-      - name: Tag Docker Image for DockerHub
+      - name: Build Docker image
         run: |
-          docker tag my-python-app:latest ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
+          docker build -t my-app:latest .
 
-      - name: Push to DockerHub
-        run: |
-          docker tag my-python-app:latest ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
-
-  # Job 2: Scan Docker Image with Trivy
-  trivy_scan:
+  # Job 2: Scan Docker image with Trivy
+  scan:
     runs-on: ubuntu-latest
-    needs: build_and_push_dockerhub
-
+    needs: build
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
       - name: Set up Trivy
-        uses: aquasecurity/setup-trivy@v0.2.0
-        with:
-          version: 'latest'
-
-      - name: Run Trivy Scan on Docker Image
         run: |
-          trivy image --scanners vuln my-python-app:latest > trivy-report.txt
+          curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.21.3/trivy_0.21.3_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
 
-      - name: Upload Trivy Report as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report
-          path: trivy-report.txt
+      - name: Run Trivy scan
+        run: |
+          trivy image --exit-code 1 --no-progress --format json -o trivy-report.json my-app:latest
 
-  # Job 3: Push to ECR if Scan is Successful
-  push_to_ecr:
+      - name: Check Trivy scan result
+        run: |
+          if grep -q '"Severity": "HIGH"' trivy-report.json; then
+            echo "Scan failed: HIGH vulnerabilities detected!"
+            exit 1
+          fi
+
+  # Job 3: Push Docker image to ECR if scan is OK
+  push:
     runs-on: ubuntu-latest
-    needs: trivy_scan
-    if: success()  # Only run this job if the previous jobs are successful
-
+    needs: scan
+    if: success()  # Only run this job if the scan passed
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Tag Docker Image for ECR
         run: |
-          docker tag my-python-app:latest ${{ secrets.AWS_ACCESS_KEY_ID}}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-      - name: Push to ECR
+      - name: Tag Docker image
         run: |
-          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
+          docker tag my-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
-      - name: Success message
-        run: echo "Image successfully pushed to ECR!"
+      - name: Push Docker image to ECR
+        run: |
+          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+
+  # Job 4: Store Trivy scan report as an artifact
+  artifact:
+    runs-on: ubuntu-latest
+    needs: scan
+    steps:
+      - name: Upload Trivy scan report as artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: trivy-report
+          path: trivy-report.json
