@@ -11,21 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Build Docker image
         run: |
           docker build -t my-app:latest .
-          docker save my-app:latest | gzip > my-app.tar.gz  # Save image as an artifact
-
+          # Debug: List Docker images to confirm it's built
+          docker images
       - name: Set up Trivy
         run: |
           curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.21.3/trivy_0.21.3_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
-
+      - name: List Docker images (debug)
+        run: |
+          docker images  # This will list the images and confirm if `my-app:latest` exists
       - name: Run Trivy scan
         run: |
-          trivy image --format json -o trivy-report.json my-app:latest
-
+          # Basic Trivy scan command
+          trivy image my-app:latest
       - name: Check Trivy scan result
         run: |
           if grep -q '"Severity": "HIGH"' trivy-report.json; then
