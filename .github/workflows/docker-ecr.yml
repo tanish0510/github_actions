@@ -22,11 +22,12 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1
+          aws-region: ${{ secrets.AWS_REGION }}  # Use AWS_REGION secret here
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        # No 'region' input needed here as AWS_REGION is already configured
 
       - id: docker-tag
         uses: yuya-takeyama/docker-tag-from-github-ref-action@v1
@@ -48,9 +49,17 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v2
 
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}  # Use AWS_REGION secret here
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+        # No 'region' input needed here
 
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@master
@@ -67,10 +76,17 @@ jobs:
     needs: scan  # This job depends on the scan job
     if: success()  # Only runs if the previous job is successful
     steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}  # Use AWS_REGION secret here
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-        # No 'region' input needed for this action
+
       - name: Push Docker image to ECR
         env:
           ECR_REGISTRY: ${{ needs.build.outputs.ECR_REGISTRY }}
