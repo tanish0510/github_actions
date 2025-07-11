@@ -1,11 +1,11 @@
-FROM python:3.10-slim
+FROM node:14
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-COPY requirements.txt .
+COPY package.json .
+RUN npm install 
+COPY . .
 
-RUN pip install --no-cache-dir -r requirements.txt
+EXPOSE 3000
 
-COPY main.py .
-
-CMD ["python", "main.py"]
+CMD ["node", "index.js"]
