@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  # Job 1: Build Docker image
+  # Job 1: Build Docker image and run Trivy scan
   build:
     runs-on: ubuntu-latest
     steps:
@@ -30,6 +30,7 @@ jobs:
 
       - name: Run Trivy scan
         run: |
+          # Run Trivy scan and save the results as a JSON file
           trivy image --format json -o trivy-report.json my-app:latest
 
       - name: Check Trivy scan result
@@ -40,10 +41,16 @@ jobs:
           fi
 
       - name: Upload Docker image as artifact
-        uses: actions/upload-artifact@v4  # Updated to v4
+        uses: actions/upload-artifact@v4
         with:
           name: docker-image
           path: my-app.tar.gz  # Upload saved Docker image artifact
+
+      - name: Upload Trivy scan report as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json  # Upload Trivy scan report as an artifact
 
   # Job 2: Push Docker image to ECR if scan is OK
   push:
@@ -62,7 +69,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Download Docker image artifact
-        uses: actions/download-artifact@v4  # Updated to v4
+        uses: actions/download-artifact@v4
         with:
           name: docker-image  # Download the image artifact saved in Job 1
 
@@ -87,8 +94,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Download Trivy scan report artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: trivy-report  # Download the Trivy scan report artifact saved in Job 1
+
       - name: Upload Trivy scan report as artifact
-        uses: actions/upload-artifact@v4  # Updated to v4
+        uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.json
