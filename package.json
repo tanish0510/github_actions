@@ -22,7 +22,7 @@
     "cors": "^2.8.5",
     "cross-spawn": "^7.0.5",
     "debug": "^4.3.4",
-    "dockerode": "^3.3.4",
+    "dockerode": "^4.0.7",
     "dotenv": "^16.4.5",
     "dotenv-safe": "^8.2.0",
     "express": "^4.21.2",
