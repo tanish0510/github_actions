@@ -31,6 +31,7 @@
     "helmet": "^6.1.7",
     "http-errors": "^2.0.0",
     "http-proxy-middleware": "^2.0.6",
+    "semver":"7.7.2",
     "jsonwebtoken": "^9.0.2",
     "lodash": "^4.17.21",
     "mime-types": "^2.1.35",
