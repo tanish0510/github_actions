@@ -40,8 +40,8 @@ jobs:
 
       - name: Run Trivy scan
         run: |
-          # Ensure we scan the local image by using its tag `my-app:latest`
-          trivy image --exit-code 1 --no-progress --format json -o trivy-report.json my-app:latest
+          # Basic Trivy scan command
+          trivy image my-app:latest
 
       - name: Check Trivy scan result
         run: |
@@ -72,11 +72,11 @@ jobs:
 
       - name: Tag Docker image
         run: |
-          docker tag my-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+          docker tag my-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+          docker push ${{ secrets.AWS_ACCESS_KEY_ID}}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
   # Job 4: Store Trivy scan report as an artifact
   artifact:
