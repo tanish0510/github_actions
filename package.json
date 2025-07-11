@@ -37,7 +37,7 @@
     "mime-types": "^2.1.35",
     "morgan": "^1.10.0",
     "morgan-body": "^2.6.0",
-    "multer": "",
+    "multer": "^2.0.1",
     "node-fetch": "^2.6.9",
     "path": "^0.12.7",
     "rimraf": "^5.0.5",
