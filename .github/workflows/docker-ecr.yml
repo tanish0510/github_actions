@@ -50,7 +50,7 @@ jobs:
           trivy image --scanners vuln my-python-app:latest > trivy-report.txt
 
       - name: Upload Trivy Report as Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.txt
@@ -81,7 +81,7 @@ jobs:
 
       - name: Push to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCESS_KEY_ID}}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
+          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
 
       - name: Success message
         run: echo "Image successfully pushed to ECR!"
