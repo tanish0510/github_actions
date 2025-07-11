@@ -1,4 +1,3 @@
-# .github/workflows/ci.yml
 name: CI/CD Pipeline
 
 on:
@@ -19,10 +18,10 @@ jobs:
         run: docker build -t my-python-app:latest .
 
       - name: Login to Docker Hub
-        run: docker login -u ${{secrets.DOCKER_USERNAME}} -p ${{secrets.DOCKER_PASSWORD}} docker.io
+        run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }} docker.io
 
       - name: Push Docker Image to Docker Hub
-        run: docker push ${{secrets.DOCKER_USERNAME}}/my-python-app:latest
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
 
   # Job 2: Scan Docker Image with Trivy (pulls from Docker Hub)
   trivy_scan:
@@ -42,10 +41,13 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
+      - name: Pull Docker Image from Docker Hub
+        run: docker pull ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
+
       # Scan the image pulled from Docker Hub
       - name: Scan Docker Image with Trivy
         run: |
-          trivy image my-python-app:latest
+          trivy image ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
 
   # Job 3: Push Docker Image to Amazon ECR (if scan is safe)
   push_ecr:
@@ -69,7 +71,7 @@ jobs:
 
       - name: Tag Docker Image for ECR
         run: |
-          docker tag my-python-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+          docker tag ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
       - name: Push Docker Image to ECR
         run: |
