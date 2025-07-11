@@ -29,6 +29,7 @@ jobs:
 
       - name: Push to DockerHub
         run: |
+          docker tag my-python-app:latest ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
 
   # Job 2: Scan Docker Image with Trivy
