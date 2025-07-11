@@ -17,16 +17,16 @@ jobs:
       - name: Log in to DockerHub
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
         run: docker build -t my-python-app:latest .
 
       - name: Push to DockerHub
         run: |
-          docker tag my-python-app:latest ${{ secrets.DOCKERHUB_USERNAME }}/my-python-app:latest
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/my-python-app:latest
+          docker tag my-python-app:latest ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest
+          docker push ${{ secrets.DOCKER_PASSWORD }}/my-python-app:latest
 
   # Job 2: Scan Docker Image with Trivy
   trivy_scan:
@@ -74,11 +74,11 @@ jobs:
 
       - name: Tag Docker Image for ECR
         run: |
-          docker tag my-python-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
+          docker tag my-python-app:latest ${{ secrets.AWS_ACCESS_KEY_IDD }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
 
       - name: Push to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
+          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
 
       - name: Success message
         run: echo "Image successfully pushed to ECR!"
