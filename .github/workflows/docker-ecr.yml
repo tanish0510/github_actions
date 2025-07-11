@@ -53,9 +53,13 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v1
 
     # Scan the Docker image that was already tagged for ECR
+    - name: Pull Docker Image from ECR
+      run: |
+       docker pull ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+
     - name: Scan Docker Image with Trivy
       run: |
-        trivy image ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+       trivy image ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
   # Job 3: Push Docker Image to Amazon ECR (if the scan is safe)
   push_ecr:
