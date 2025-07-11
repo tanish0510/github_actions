@@ -77,7 +77,6 @@ jobs:
         run: |
          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
-Mak
       - name: Tag Docker Image for ECR
         run: |
           docker tag ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
