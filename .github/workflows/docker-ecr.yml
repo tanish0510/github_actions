@@ -33,7 +33,7 @@ jobs:
         id: docker-build
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: cloudevopsguru/demo1
+          ECR_REPOSITORY: git-actions
           # Use the git tag as the image tag.
           # github.ref format is like `refs/tags/v0.0.1`, so we strip the the
           # `refs/tags/` prefix and export this for later use.
