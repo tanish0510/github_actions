@@ -1,4 +1,4 @@
-name: Build and Push Docker Image to ECR
+name: Build and Push Python Docker App to ECR
 
 on:
   push:
@@ -26,11 +26,6 @@ jobs:
 
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Debug Docker variables
-        run: |
-          echo "Image Tag: $IMAGE_TAG"
-          echo "Repository: $ECR_REPOSITORY"
 
       - name: Build Docker image
         run: |
