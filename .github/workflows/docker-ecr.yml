@@ -84,7 +84,7 @@ jobs:
          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       - name: Tag Docker Image for ECR
         run: |
-          docker tag ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+          docker tag ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions
 
       - name: Push Docker Image to ECR
         run: |
