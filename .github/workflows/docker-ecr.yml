@@ -72,11 +72,14 @@ jobs:
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-
-    #   - name: Tag Docker Image for ECR
-    #     run: |
-    #       docker tag ${{ secrets.DOCKER_USERNAME }}/my-python-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+# Push Docker Image to Amazon ECR
+      - name: Tag Docker Image for ECR
+        run: |
+         # Tagging the image with ECR repository URL
+          docker tag latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
       - name: Push Docker Image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions
+          # Pushing the tagged image to ECR
+          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+
