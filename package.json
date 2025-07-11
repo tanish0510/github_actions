@@ -20,7 +20,7 @@
     "config": "^3.3.9",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "cross-spawn": "^7.0.5",
+    "cross-spawn": "^6.0.6",
     "debug": "^4.3.4",
     "dockerode": "^4.0.7",
     "dotenv": "^16.4.5",
