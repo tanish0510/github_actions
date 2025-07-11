@@ -25,41 +25,32 @@ jobs:
       - name: Display images
         run: docker images
 
-  # Job 2: Scan Docker Image with Trivy (using the tagged image from previous job)
+  # Job 2: Scan Docker Image with Trivy (using the locally built image)
   trivy_scan:
-   runs-on: ubuntu-latest
-   needs: build_and_tag_ecr  # Ensure this job runs after the build and tag job
+    runs-on: ubuntu-latest
+    needs: build_and_tag_ecr  # Ensure this job runs after the build and tag job
 
-   steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    # Set up Trivy for scanning
-    - name: Set up Trivy
-      uses: aquasecurity/setup-trivy@v0.2.0
-      with:
-        version: 'latest'
+      # Set up Trivy for scanning
+      - name: Set up Trivy
+        uses: aquasecurity/setup-trivy@v0.2.0
+        with:
+          version: 'latest'
 
-    # Ensure AWS credentials are properly configured for ECR access
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v1
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ secrets.AWS_REGION }}
+      # Scan the locally built and tagged image
+      - name: Scan Docker Image with Trivy (local scan)
+        run: |
+          # Run Trivy scan and redirect the output to a file
+          trivy image my-python-app:latest > report.txt
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
-    # Scan the Docker image that was already tagged for ECR
-    - name: Pull Docker Image from ECR
-      run: |
-       docker pull ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
-
-    - name: Scan Docker Image with Trivy
-      run: |
-       trivy image ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+      # Save the report to a specific directory (optional)
+      - name: Save Trivy report as artifact
+        run: |
+          mkdir -p reports
+          mv report.txt reports/
 
   # Job 3: Push Docker Image to Amazon ECR (if the scan is safe)
   push_ecr:
@@ -81,7 +72,19 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      # Push the image to ECR
+      # Push the image to ECR only if the scan is successful
       - name: Push Docker Image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/my-python-app:latest
+
+  # Job 4: Upload Trivy Report as an Artifact (optional)
+  upload_report:
+    runs-on: ubuntu-latest
+    needs: trivy_scan  # Ensure this job runs after the scan job
+
+    steps:
+      - name: Upload Trivy scan report as an artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: trivy-report
+          path: reports/report.txt
