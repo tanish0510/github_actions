@@ -27,6 +27,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Set up Trivy
+        uses: aquasecurity/setup-trivy@v0.2.0
+        with:
+          version: '0.51.1'  # You can specify the version here, or use the default
+
       - name: Scan Docker Image with Trivy
         run: |
           trivy image my-python-app
