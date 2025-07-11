@@ -61,16 +61,19 @@ jobs:
           gunzip -c my-app.tar.gz | docker load  # Load the saved image into Docker
 
       - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1  # Corrected login syntax
-
-      - name: Docker info (check authentication)
         run: |
-          docker info  # Debug step to confirm Docker is authenticated
+           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
+
+      # Option 2: Alternatively use the GitHub Action (if above fails)
+      # - name: Login to Amazon ECR
+      #   uses: aws-actions/amazon-ecr-login@v1
+      #   with:
+      #     region: ${{ secrets.AWS_REGION }}
 
       - name: Tag Docker image
         run: |
           docker tag my-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+
       - name: Push Docker image to ECR
         run: |
           docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
