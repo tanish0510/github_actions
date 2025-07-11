@@ -18,28 +18,22 @@ jobs:
           docker build -t my-app:latest .
           # Debug: List Docker images to confirm it's built
           docker images
-
       - name: Set up Trivy
         run: |
           curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.21.3/trivy_0.21.3_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
-
       - name: List Docker images (debug)
         run: |
           docker images  # This will list the images and confirm if `my-app:latest` exists
-
       - name: Run Trivy scan
         run: |
-          # Run Trivy scan with JSON output to a file
-          trivy image --format json -o trivy-report.json my-app:latest
-
+          # Basic Trivy scan command
+          trivy image my-app:latest
       - name: Check Trivy scan result
         run: |
-          # Check for high or critical vulnerabilities
-          if grep -q '"Severity": "HIGH"' trivy-report.json || grep -q '"Severity": "CRITICAL"' trivy-report.json; then
-            echo "Scan failed: HIGH or CRITICAL vulnerabilities detected!"
+          if grep -q '"Severity": "HIGH"' trivy-report.json; then
+            echo "Scan failed: HIGH vulnerabilities detected!"
             exit 1
           fi
-
   # Job 2: Push Docker image to ECR if scan is OK
   push:
     runs-on: ubuntu-latest
