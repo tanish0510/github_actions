@@ -15,9 +15,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v2  # (No longer needed but just ensures docker is available)
-
       - name: Build Docker Image
         run: |
           docker build -t my-python-app .
@@ -33,10 +30,12 @@ jobs:
 
       - name: Install Trivy
         run: |
-          sudo apt-get install -y wget
-          wget https://github.com/aquasecurity/trivy/releases/download/v0.23.3/trivy_0.23.3_Linux-x86_64.deb
-          sudo dpkg -i trivy_0.23.3_Linux-x86_64.deb
-          
+          sudo apt-get update && sudo apt-get install -y wget
+          # Download and install the latest version of Trivy
+          latest_version=$(wget -qO- https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r .tag_name)
+          wget https://github.com/aquasecurity/trivy/releases/download/$latest_version/trivy_${latest_version#v}_Linux-x86_64.deb
+          sudo dpkg -i trivy_${latest_version#v}_Linux-x86_64.deb
+
       - name: Scan Docker Image with Trivy
         run: |
           trivy image my-python-app
