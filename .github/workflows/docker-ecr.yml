@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  # Job 1: Build Docker image
+  # Job 1: Build Docker imag
   build:
     runs-on: ubuntu-latest
     steps:
