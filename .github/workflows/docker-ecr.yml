@@ -16,24 +16,29 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t my-app:latest .
-          # Debug: List Docker images to confirm it's built
-          docker images
+          docker save my-app:latest | gzip > my-app.tar.gz  # Save image as an artifact
+
       - name: Set up Trivy
         run: |
           curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.21.3/trivy_0.21.3_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
-      - name: List Docker images (debug)
-        run: |
-          docker images  # This will list the images and confirm if `my-app:latest` exists
+
       - name: Run Trivy scan
         run: |
-          # Basic Trivy scan command
-          trivy image my-app:latest
+          trivy image --format json -o trivy-report.json my-app:latest
+
       - name: Check Trivy scan result
         run: |
           if grep -q '"Severity": "HIGH"' trivy-report.json; then
             echo "Scan failed: HIGH vulnerabilities detected!"
             exit 1
           fi
+
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image
+          path: my-app.tar.gz  # Upload saved Docker image artifact
+
   # Job 2: Push Docker image to ECR if scan is OK
   push:
     runs-on: ubuntu-latest
@@ -49,26 +54,27 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-      - name: Checkout
-        uses: actions/checkout@v3
 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          name: docker-image  # Download the image artifact saved in Job 1
+
+      - name: Load Docker image
+        run: |
+          gunzip -c my-app.tar.gz | docker load  # Load the saved image into Docker
 
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
+
       - name: Tag Docker image
         run: |
-          docker tag my-app:latest ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+          docker tag my-app:latest ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
   # Job 3: Store Trivy scan report as an artifact
   artifact:
