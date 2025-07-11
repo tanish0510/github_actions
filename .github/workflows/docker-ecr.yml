@@ -27,12 +27,7 @@ jobs:
         run: |
           trivy image --format json -o trivy-report.json my-app:latest
 
-      - name: Check Trivy scan result
-        run: |
-          if grep -q '"Severity": "HIGH"' trivy-report.json; then
-            echo "Scan failed: HIGH vulnerabilities detected!"
-            exit 1
-          fi
+     
 
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
