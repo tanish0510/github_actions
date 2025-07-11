@@ -1,11 +1,17 @@
-FROM node:20-bullseye
+# Dockerfile
+FROM python:3.9-slim
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-COPY package.json .
-RUN npm install 
+# Copy the requirements file and install dependencies
+COPY requirements.txt .
+
+RUN pip install -r requirements.txt
+
+# Copy the application code
 COPY . .
 
-EXPOSE 3000
+# Expose port for web app (if necessary)
+EXPOSE 5000
 
-CMD ["node", "index.js"]
+CMD ["python", "app.py"]
