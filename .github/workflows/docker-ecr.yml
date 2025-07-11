@@ -80,7 +80,6 @@ jobs:
 
       - name: Log in to ECR via Docker
         run: |
-         aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
          docker login --username AWS --password-stdin ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
       - name: Tag Docker Image for ECR
         run: |
