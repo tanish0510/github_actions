@@ -64,7 +64,7 @@ jobs:
       - name: Scan Docker image with Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ needs.build.outputs.ECR_REGISTRY }}/git-actions:${{ needs.build.outputs.image_tag }}
+          image-ref: ${{ steps.login-ecr.outputs.registry }}/git-actions:${{ needs.build.outputs.image_tag }}
           format: table
           exit-code: 1
           ignore-unfixed: true
