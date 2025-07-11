@@ -19,6 +19,8 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t my-app:latest .
+          # Debug: List Docker images to confirm it's built
+          docker images
 
   # Job 2: Scan Docker image with Trivy
   scan:
@@ -32,8 +34,13 @@ jobs:
         run: |
           curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.21.3/trivy_0.21.3_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
 
+      - name: List Docker images (debug)
+        run: |
+          docker images  # This will list the images and confirm if `my-app:latest` exists
+
       - name: Run Trivy scan
         run: |
+          # Ensure we scan the local image by using its tag `my-app:latest`
           trivy image --exit-code 1 --no-progress --format json -o trivy-report.json my-app:latest
 
       - name: Check Trivy scan result
