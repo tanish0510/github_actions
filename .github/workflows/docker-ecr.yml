@@ -11,6 +11,7 @@ jobs:
     env:
       #IMAGE_TAG: ${{ github.sha }}
       AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
 
     steps:
       - name: Checkout code
@@ -31,7 +32,8 @@ jobs:
             DOCKER_BUILDKIT: 0
         run: |
           IMAGE_TAG=${{ github.sha }}
-          docker build -t ${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG -t ${{ secrets.ECR_REPOSITORY }}:latest .
+          docker build -t ${{ secrets.ECR_REPOSITORY }}:$IMAGE_TAG .
+
 
 
 
