@@ -10,7 +10,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGE_TAG: ${{ github.sha }}
-      DOCKER_BUILDKIT: 0
       AWS_REGION: ${{ secrets.AWS_REGION }}
       ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
 
@@ -28,9 +27,14 @@ jobs:
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
 
+      - name: Debug Docker variables
+        run: |
+          echo "Image Tag: $IMAGE_TAG"
+          echo "Repository: $ECR_REPOSITORY"
+
       - name: Build Docker image
         run: |
-          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REPOSITORY:latest .
 
       - name: Tag Docker image for ECR
         run: |
