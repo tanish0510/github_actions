@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  # Job 1: Build Docker image and run Trivy scan
+  # Job 1: Build Docker image
   build:
     runs-on: ubuntu-latest
     steps:
@@ -16,35 +16,29 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t my-app:latest .
-          # Debug: List Docker images to confirm it's built
-          docker images
-          docker save my-app:latest | gzip > my-app.tar.gz  # Save the image as a gzipped tarball
+          # Save image to artifact to be used in other jobs
+          docker save my-app:latest | gzip > my-app.tar.gz
 
       - name: Set up Trivy
         run: |
           curl -sfL https://github.com/aquasecurity/trivy/releases/download/v0.21.3/trivy_0.21.3_Linux-64bit.tar.gz | tar xz -C /usr/local/bin
 
-      - name: List Docker images (debug)
-        run: |
-          docker images  # This will list the images and confirm if `my-app:latest` exists
-
       - name: Run Trivy scan
         run: |
-          # Run Trivy scan and save the results as a JSON file
           trivy image --format json -o trivy-report.json my-app:latest
 
+      - name: Check Trivy scan result
+        run: |
+          if grep -q '"Severity": "HIGH"' trivy-report.json; then
+            echo "Scan failed: HIGH vulnerabilities detected!"
+            exit 1
+          fi
 
       - name: Upload Docker image as artifact
         uses: actions/upload-artifact@v4
         with:
           name: docker-image
-          path: my-app.tar.gz  # Upload saved Docker image artifact
-
-      - name: Upload Trivy scan report as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: trivy-report
-          path: trivy-report.json  # Upload Trivy scan report as an artifact
+          path: my-app.tar.gz  # Save image artifact for later use
 
   # Job 2: Push Docker image to ECR if scan is OK
   push:
@@ -73,7 +67,11 @@ jobs:
 
       - name: Login to Amazon ECR
         id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
+        uses: aws-actions/amazon-ecr-login@v1  # Corrected login syntax
+
+      - name: Docker info (check authentication)
+        run: |
+          docker info  # Debug step to confirm Docker is authenticated
 
       - name: Tag Docker image
         run: |
@@ -81,18 +79,13 @@ jobs:
 
       - name: Push Docker image to ECR
         run: |
-          docker push ${{ secrets.AWS_ACCESS_KEY_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
+          docker push ${{ secrets.AWS_ACCESS_KEY_ID}}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/git-actions:latest
 
   # Job 3: Store Trivy scan report as an artifact
   artifact:
     runs-on: ubuntu-latest
     needs: build
     steps:
-      - name: Download Trivy scan report artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: trivy-report  # Download the Trivy scan report artifact saved in Job 1
-
       - name: Upload Trivy scan report as artifact
         uses: actions/upload-artifact@v4
         with:
